@@ -28,6 +28,7 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
 
 INSTALLED_APPS = [
     'apps.users',
+    'apps.rooms',
     'plugins.movies',
     'rest_framework',
     'corsheaders',

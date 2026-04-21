@@ -20,3 +20,13 @@ class Movie(models.Model):
 
     def __str__(self):
         return self.title
+
+
+
+
+class RoomVideo(models.Model):
+    room_id = models.UUIDField(unique=True) # ID з Ядра
+    movie = models.ForeignKey('movies.Movie', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"Video for room {self.room_id}"
