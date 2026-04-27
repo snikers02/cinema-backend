@@ -11,6 +11,7 @@ class Room(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
+    name = models.CharField(max_length=255)
 
 class RoomMember(models.Model):
     room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='members')

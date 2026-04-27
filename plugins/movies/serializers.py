@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from .models import Movie
+from .models import Movie, RoomVideo
 
-class MovieSerializer(serializers.ModelSerializer):
+class MoviesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Movie
         fields = ['id', 'title', 'description', 'video_file', 'poster', 'created_at']
@@ -11,3 +11,10 @@ class MovieSerializer(serializers.ModelSerializer):
         if not value.name.endswith(('.mp4', '.mkv', '.avi')):
             raise serializers.ValidationError("Unsupported video format.")
         return value
+
+class RoomWithMovieSerializer(serializers.ModelSerializer):
+    movie_details = MoviesSerializer(source='movie', read_only=True)
+
+    class Meta:
+        model = RoomVideo
+        fields = ['room_id', 'creator_name', 'room_name', 'movie_details']

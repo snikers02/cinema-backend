@@ -11,7 +11,7 @@ def _movie_id_from_payload(raw_data):
 
 
 @receiver(room_created_signal)
-def attach_video_to_room(sender, room_id, raw_data, **kwargs):
+def attach_video_to_room(sender, room_id, creator_name, room_name, raw_data, **kwargs):
     movie_id = _movie_id_from_payload(raw_data)
 
     if not movie_id:
@@ -24,5 +24,5 @@ def attach_video_to_room(sender, room_id, raw_data, **kwargs):
 
     RoomVideo.objects.update_or_create(
         room_id=room_id,
-        defaults={"movie": movie},
+        defaults={"movie": movie, "creator_name": creator_name, "room_name": room_name},
     )

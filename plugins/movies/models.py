@@ -26,7 +26,9 @@ class Movie(models.Model):
 
 class RoomVideo(models.Model):
     room_id = models.UUIDField(unique=True) # ID з Ядра
+    creator_name = models.CharField(max_length=255, blank=True, null=True)
     movie = models.ForeignKey('movies.Movie', on_delete=models.CASCADE)
-
+    room_name = models.CharField(max_length=255, blank=True, null=True)
+    
     def __str__(self):
         return f"Video for room {self.room_id}"
