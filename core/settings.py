@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'apps.users',
     'apps.rooms',
     'plugins.movies',
+    'plugins.sync',
     'rest_framework',
     'corsheaders',
     'django.contrib.admin',

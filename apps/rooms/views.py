@@ -5,7 +5,6 @@ from .models import Room, RoomMember
 from .serializers import RoomSerializer
 from .signals import room_created_signal
 
-# 1. Ендпоінт для списку кімнат (GET) та створення (POST)
 class RoomListCreateView(generics.ListCreateAPIView):
     queryset = Room.objects.filter(is_active=True).order_by('-created_at')
     serializer_class = RoomSerializer
@@ -19,16 +18,19 @@ class RoomListCreateView(generics.ListCreateAPIView):
         room = serializer.save(creator=self.request.user)
         RoomMember.objects.create(room=room, user=self.request.user)
         
-        # Сигнал для плагінів (наприклад, для movies)
         room_created_signal.send(
             sender=self.__class__, 
             room_id=room.id,
             room_name=room.name,
             creator_name=self.request.user.username,
+            invite_code=room.invite_code,
+            is_public=room.is_public,
             raw_data=self.request.data
         )
 
-# 2. Ендпоінт для входу в кімнату (POST)
+    def get_queryset(self):
+        return Room.objects.filter(is_active=True, is_public=True).order_by('-created_at')
+
 class RoomJoinView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -41,10 +43,48 @@ class RoomJoinView(APIView):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        # Додаємо юзера в учасники, якщо його там ще немає
         _member, created = RoomMember.objects.get_or_create(room=room, user=request.user)
         data = RoomSerializer(room).data
         return Response(
             data,
             status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
+
+
+
+class JoinByCodeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        code = request.data.get('invite_code')
+        if not code:
+            return Response({"error": "Code is required"}, status=400)
+
+        try:
+            room = Room.objects.get(invite_code=code.upper(), is_active=True)
+            
+            _member, created = RoomMember.objects.get_or_create(room=room, user=request.user)
+            
+            return Response({
+                "message": "Joined successfully",
+                "room_id": room.id,
+                "room_name": room.name
+            }, status=200)
+            
+        except Room.DoesNotExist:
+            return Response({"error": "Invalid invite code"}, status=404)
+
+
+class MyRoomsListView(generics.ListAPIView):
+    serializer_class = RoomSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return Room.objects.filter(creator=self.request.user, is_active=True)
+
+
+
+class RoomDetailView(generics.RetrieveAPIView):
+    queryset = Room.objects.filter(is_active=True)
+    serializer_class = RoomSerializer
+    permission_classes = [permissions.IsAuthenticated]

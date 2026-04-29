@@ -31,6 +31,6 @@ class RoomMovieDetailView(APIView):
 
 # 3. Список УСІХ активних кімнат з їхніми фільмами (для головної сторінки/карток)
 class ActiveRoomsWithMoviesView(generics.ListAPIView):
-    queryset = RoomVideo.objects.select_related('movie').all()
+    queryset = RoomVideo.objects.filter(is_public=True).select_related('movie')
     serializer_class = RoomWithMovieSerializer
     permission_classes = [permissions.AllowAny]

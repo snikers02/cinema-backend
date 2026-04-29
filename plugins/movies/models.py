@@ -29,6 +29,8 @@ class RoomVideo(models.Model):
     creator_name = models.CharField(max_length=255, blank=True, null=True)
     movie = models.ForeignKey('movies.Movie', on_delete=models.CASCADE)
     room_name = models.CharField(max_length=255, blank=True, null=True)
+    invite_code = models.CharField(max_length=10, blank=True, null=True)
+    is_public = models.BooleanField(default=True)
     
     def __str__(self):
         return f"Video for room {self.room_id}"

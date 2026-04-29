@@ -10,25 +10,30 @@ class RoomMemberSerializer(serializers.ModelSerializer):
 
 class RoomSerializer(serializers.ModelSerializer):
     creator_name = serializers.ReadOnlyField(source='creator.username')
-
-    class Meta:
-        model = Room
-        fields = ['id', 'creator', 'creator_name', 'created_at']
-        read_only_fields = ['id', 'creator', 'created_at']
-
-    def create(self, validated_data):
-        return Room.objects.create(**validated_data)
-
-
-
-class RoomSerializer(serializers.ModelSerializer):
-    creator_name = serializers.ReadOnlyField(source='creator.username')
     members_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Room
-        fields = ['id', 'name', 'creator', 'creator_name', 'members_count', 'created_at']
-        read_only_fields = ['id', 'creator', 'created_at']
+        fields = [
+            'id', 
+            'name', 
+            'is_public',
+            'invite_code',
+            'creator', 
+            'creator_name', 
+            'members_count', 
+            'created_at'
+        ]
+        read_only_fields = [
+            'id', 
+            'creator', 
+            'creator_name', 
+            'invite_code',
+            'created_at'
+        ]
 
     def get_members_count(self, obj):
-        return obj.members.count()
+        # Перевірка на всяк випадок, якщо об'єкт ще не створений
+        if hasattr(obj, 'members'):
+            return obj.members.count()
+        return 0

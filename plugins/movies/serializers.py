@@ -17,4 +17,4 @@ class RoomWithMovieSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RoomVideo
-        fields = ['room_id', 'creator_name', 'room_name', 'movie_details']
+        fields = ['room_id', 'creator_name', 'room_name', 'invite_code', 'movie_details']
