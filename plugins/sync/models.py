@@ -1,6 +1,9 @@
 from django.db import models
 
+
 class RoomPlaybackState(models.Model):
+    id = models.BigAutoField(primary_key=True, serialize=False)
+
     room_id = models.UUIDField(unique=True)
     
     current_time = models.FloatField(default=0.0)

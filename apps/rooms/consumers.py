@@ -3,6 +3,8 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from plugins.sync.models import RoomPlaybackState
 from apps.rooms.models import Room
+from .signals import socket_message_signal
+from asgiref.sync import sync_to_async
 
 class RoomConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -35,24 +37,46 @@ class RoomConsumer(AsyncWebsocketConsumer):
         )
 
 
-        
     async def receive(self, text_data):
         data = json.loads(text_data)
         msg_type = data.get('type')
-        current_time = data.get('time', 0)
 
-        is_owner = await self.is_room_owner(self.user, self.room_id)
-        
-        if is_owner:
-            await self.update_room_state(self.room_id, msg_type, current_time)
+        # Додаємо username для чату
+        if msg_type == 'chat.message' and self.user.is_authenticated:
+            data['username'] = self.user.username
 
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'broadcast_sync',
-                    'payload': data
-                }
-            )
+        # Ядро просто повідомляє систему: "Гей, прийшло повідомлення!"
+        # Воно не знає, чи це чат, чи пауза.
+        await sync_to_async(socket_message_signal.send)(
+            sender=self.__class__,
+            room_id=self.room_id,
+            user=self.user,
+            message_type=msg_type,
+            data=data,
+        )
+
+        # Обробка синхронізації відтворення (тільки для власника)
+        if msg_type in ('play', 'pause'):
+            current_time = data.get('time', 0)
+            is_owner = await self.is_room_owner(self.user, self.room_id)
+
+            if is_owner:
+                await self.update_room_state(self.room_id, msg_type, current_time)
+
+        # Розсилає всім у кімнату (транспортна роль); відправник не отримує echo — щоб seek/play не ловили петлю pause
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'room_broadcast',
+                'payload': data,
+                'sender_channel': self.channel_name,
+            }
+        )
+
+    async def room_broadcast(self, event):
+        if event.get('sender_channel') == self.channel_name:
+            return
+        await self.send(text_data=json.dumps(event['payload']))
         
 
     async def disconnect(self, close_code):
@@ -73,9 +97,6 @@ class RoomConsumer(AsyncWebsocketConsumer):
 
 
     async def presence_event(self, event):
-        await self.send(text_data=json.dumps(event['payload']))
-    
-    async def broadcast_sync(self, event):
         await self.send(text_data=json.dumps(event['payload']))
 
     @database_sync_to_async
