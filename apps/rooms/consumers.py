@@ -41,12 +41,9 @@ class RoomConsumer(AsyncWebsocketConsumer):
         data = json.loads(text_data)
         msg_type = data.get('type')
 
-        # Додаємо username для чату
         if msg_type == 'chat.message' and self.user.is_authenticated:
             data['username'] = self.user.username
 
-        # Ядро просто повідомляє систему: "Гей, прийшло повідомлення!"
-        # Воно не знає, чи це чат, чи пауза.
         await sync_to_async(socket_message_signal.send)(
             sender=self.__class__,
             room_id=self.room_id,
@@ -55,15 +52,15 @@ class RoomConsumer(AsyncWebsocketConsumer):
             data=data,
         )
 
-        # Обробка синхронізації відтворення (тільки для власника)
+        if msg_type in ('play', 'pause', 'seek'):
+            can_control = await self.user_can_control_playback(self.user, self.room_id)
+            if not can_control:
+                return
+
         if msg_type in ('play', 'pause'):
             current_time = data.get('time', 0)
-            is_owner = await self.is_room_owner(self.user, self.room_id)
+            await self.update_room_state(self.room_id, msg_type, current_time)
 
-            if is_owner:
-                await self.update_room_state(self.room_id, msg_type, current_time)
-
-        # Розсилає всім у кімнату (транспортна роль); відправник не отримує echo — щоб seek/play не ловили петлю pause
         await self.channel_layer.group_send(
             self.room_group_name,
             {
@@ -98,6 +95,11 @@ class RoomConsumer(AsyncWebsocketConsumer):
 
     async def presence_event(self, event):
         await self.send(text_data=json.dumps(event['payload']))
+
+    @database_sync_to_async
+    def user_can_control_playback(self, user, room_id):
+        from plugins.sync.models import check_user_can_control_playback
+        return check_user_can_control_playback(user, room_id)
 
     @database_sync_to_async
     def is_room_owner(self, user, room_id):

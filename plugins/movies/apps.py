@@ -6,4 +6,5 @@ class MoviesConfig(AppConfig):
     name = 'plugins.movies'
 
     def ready(self):
+        print("!!! MoviesConfig ready() called, importing signals !!!")
         import plugins.movies.signals

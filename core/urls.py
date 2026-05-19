@@ -56,6 +56,9 @@ urlpatterns = [
     path('api/rooms/', include('apps.rooms.urls')),
     path('api/chat/', include('plugins.chat.urls')),
     path('api/movies/', include('plugins.movies.urls')),
+    path('api/sync/', include('plugins.sync.urls')),
+    path('api/activity/', include('plugins.activity.urls')),
+    path('api/social/', include('plugins.social.urls')),
 ]
 
 if settings.DEBUG:
