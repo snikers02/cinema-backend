@@ -1,6 +1,6 @@
 from django.dispatch import receiver
 from apps.rooms.signals import socket_message_signal
-from .models import ChatMessage
+from plugins.chat.models import ChatMessage
 
 @receiver(socket_message_signal)
 def handle_chat_message(sender, room_id, user, message_type, data, **kwargs):
