@@ -71,7 +71,7 @@ class AddFriendView(APIView):
                 friend_added_signal.send(sender=Friendship, user=request.user, friend=friend_user)
                 return Response({"message": "Friend request accepted", "status": "ACCEPTED"}, status=200)
 
-        friendship = Friendship.objects.create(user=request.user, friend=friend_user, status='PENDING')
+        Friendship.objects.create(user=request.user, friend=friend_user, status='PENDING')
         return Response({"message": "Friend request sent", "status": "PENDING"}, status=201)
 
 

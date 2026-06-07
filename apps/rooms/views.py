@@ -63,8 +63,8 @@ class JoinByCodeView(APIView):
         try:
             room = Room.objects.get(invite_code=code.upper(), is_active=True)
             
-            _member, created = RoomMember.objects.get_or_create(room=room, user=request.user)
-            
+            RoomMember.objects.get_or_create(room=room, user=request.user)
+
             return Response({
                 "message": "Joined successfully",
                 "room_id": room.id,

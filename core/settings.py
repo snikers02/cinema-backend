@@ -1,7 +1,9 @@
 import environ
 import os
+import sys
 from pathlib import Path
 from datetime import timedelta
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -13,10 +15,12 @@ environ.Env.read_env(BASE_DIR / '.env')
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env(
-    'SECRET_KEY',
-    default='development-secret-key-only',
-)
+SECRET_KEY = env('SECRET_KEY', default=None)
+if not SECRET_KEY:
+    raise ImproperlyConfigured(
+        'SECRET_KEY environment variable is required. '
+        'Set it in .env or export it before starting the application.'
+    )
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=True)
@@ -88,7 +92,6 @@ DATABASES = {
     'default': env.db('DATABASE_URL', default='postgres://user:password@db:5432/cinema_db')
 }
 
-import sys
 if 'pytest' in sys.modules:
     DATABASES = {
         'default': {

@@ -33,11 +33,7 @@ class UserModelTests(TestCase):
 
     def test_user_unique_email_constraint(self):
         with self.assertRaises(Exception):
-            User.objects.create_user(
-                username='other',
-                email=self.user.email,
-                password='pass12345',
-            )
+            create_test_user(username='other', email=self.user.email)
 
 
 class UserViewsTests(TestCase):

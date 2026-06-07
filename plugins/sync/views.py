@@ -7,10 +7,24 @@ from .models import RoomPlaybackRules, RoomAuthorizedController, check_user_can_
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 
+ERROR_ROOM_NOT_FOUND = "Room not found"
+
+
+def _room_not_found_response():
+    return Response({"error": ERROR_ROOM_NOT_FOUND}, status=status.HTTP_404_NOT_FOUND)
+
+
+def _get_room(room_id):
+    try:
+        return Room.objects.get(id=room_id)
+    except Room.DoesNotExist:
+        return None
+
+
 def _notify_room_rules_updated(room_id, rules):
     controllers = RoomAuthorizedController.objects.filter(room_id=room_id).select_related('user')
     auth_list = [{"userId": c.user.id, "username": c.user.username} for c in controllers]
-    
+
     channel_layer = get_channel_layer()
     async_to_sync(channel_layer.group_send)(
         f"room_{room_id}",
@@ -24,14 +38,13 @@ def _notify_room_rules_updated(room_id, rules):
         }
     )
 
+
 class RoomRulesView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, room_id):
-        try:
-            room = Room.objects.get(id=room_id)
-        except Room.DoesNotExist:
-            return Response({"error": "Room not found"}, status=status.HTTP_404_NOT_FOUND)
+        if not Room.objects.filter(id=room_id).exists():
+            return _room_not_found_response()
 
         rules, _ = RoomPlaybackRules.objects.get_or_create(
             room_id=room_id,
@@ -39,7 +52,7 @@ class RoomRulesView(APIView):
         )
         controllers = RoomAuthorizedController.objects.filter(room_id=room_id).select_related('user')
         auth_list = [{"userId": c.user.id, "username": c.user.username} for c in controllers]
-        
+
         can_control = check_user_can_control_playback(request.user, room_id)
 
         return Response({
@@ -50,16 +63,15 @@ class RoomRulesView(APIView):
         })
 
     def post(self, request, room_id):
-        try:
-            room = Room.objects.get(id=room_id)
-        except Room.DoesNotExist:
-            return Response({"error": "Room not found"}, status=status.HTTP_404_NOT_FOUND)
+        room = _get_room(room_id)
+        if room is None:
+            return _room_not_found_response()
 
         if room.creator != request.user:
             return Response({"error": "Only room creator can change rules"}, status=status.HTTP_403_FORBIDDEN)
 
         anyone_can_control = request.data.get('anyone_can_control', False)
-        
+
         rules, _ = RoomPlaybackRules.objects.get_or_create(
             room_id=room_id,
             defaults={'anyone_can_control': False}
@@ -79,14 +91,14 @@ class RoomRulesView(APIView):
             "can_control": True
         })
 
+
 class GrantControlView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, room_id):
-        try:
-            room = Room.objects.get(id=room_id)
-        except Room.DoesNotExist:
-            return Response({"error": "Room not found"}, status=status.HTTP_404_NOT_FOUND)
+        room = _get_room(room_id)
+        if room is None:
+            return _room_not_found_response()
 
         if room.creator != request.user:
             return Response({"error": "Only room creator can grant control rights"}, status=status.HTTP_403_FORBIDDEN)
@@ -129,14 +141,14 @@ class GrantControlView(APIView):
             "authorized_users": auth_list
         })
 
+
 class RevokeControlView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, room_id):
-        try:
-            room = Room.objects.get(id=room_id)
-        except Room.DoesNotExist:
-            return Response({"error": "Room not found"}, status=status.HTTP_404_NOT_FOUND)
+        room = _get_room(room_id)
+        if room is None:
+            return _room_not_found_response()
 
         if room.creator != request.user:
             return Response({"error": "Only room creator can revoke control rights"}, status=status.HTTP_403_FORBIDDEN)
