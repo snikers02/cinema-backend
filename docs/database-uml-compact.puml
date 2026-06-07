@@ -1,0 +1,43 @@
+@startuml Cinema_DB_Compact
+!theme plain
+title Cinema — модель даних (скорочено)
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam defaultFontSize 11
+skinparam packageFontSize 12
+skinparam classFontSize 10
+left to right direction
+
+package "Ядро" {
+  class CustomUser
+  class Room
+  class RoomMember
+}
+
+package "Плагіни" {
+  class RoomPlaybackState
+  class RoomPlaybackRules
+  class ChatMessage
+  class Movie
+  class RoomVideo
+  class ReactionStat
+  class Achievement
+}
+
+CustomUser "1" --> "N" Room : створює
+CustomUser "N" --> "N" Room : RoomMember
+Room "1" --> "0..1" RoomPlaybackState
+Room "1" --> "0..1" RoomPlaybackRules
+Room "1" --> "N" ChatMessage
+Room "1" --> "0..1" RoomVideo
+Room "1" --> "N" ReactionStat
+CustomUser "1" --> "N" Movie
+Movie "1" --> "N" RoomVideo
+CustomUser "N" --> "N" Achievement
+
+note bottom of Room
+  room_id (UUID) — зв'язок
+  з плагінами без FK
+end note
+
+@enduml

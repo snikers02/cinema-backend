@@ -1,0 +1,204 @@
+@startuml Cinema_Database_UML
+!theme plain
+title Cinema — розширена UML-модель даних (Django ORM)
+
+skinparam classAttributeIconSize 0
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+' ========== ЯДРО ==========
+package "apps.users" #E8F4FC {
+  class CustomUser <<AbstractUser>> {
+    + id : BigAutoField <<PK>>
+    + username : CharField
+    + email : EmailField <<unique>>
+    + password : CharField
+    + avatar : ImageField
+    + bio : TextField
+    + is_pro : BooleanField
+    + display_name : CharField
+    --
+    + created_rooms
+    + uploaded_movies
+    + achievements
+    + viewing_history
+    + authorized_room_controls
+    + friendships_initiated
+    + friendships_received
+  }
+}
+
+package "apps.rooms" #E8FCE8 {
+  class Room {
+    + id : UUIDField <<PK>>
+    + name : CharField
+    + creator_id : FK → CustomUser
+    + created_at : DateTimeField
+    + is_active : BooleanField
+    + is_public : BooleanField
+    + invite_code : CharField <<unique>>
+    --
+    + members : RoomMember[]
+  }
+
+  class RoomMember {
+    + id : BigAutoField <<PK>>
+    + room_id : FK → Room
+    + user_id : FK → CustomUser
+    + joined_at : DateTimeField
+    --
+    unique (room, user)
+  }
+}
+
+' ========== ПЛАГІНИ ==========
+package "plugins.sync" #FFF8E8 {
+  class RoomPlaybackState {
+    + id : BigAutoField <<PK>>
+    + room_id : UUIDField <<unique>>
+    + current_time : FloatField
+    + is_playing : BooleanField
+    + updated_at : DateTimeField
+  }
+
+  class RoomPlaybackRules {
+    + id : BigAutoField <<PK>>
+    + room_id : UUIDField <<unique>>
+    + anyone_can_control : BooleanField
+    + updated_at : DateTimeField
+  }
+
+  class RoomAuthorizedController {
+    + id : BigAutoField <<PK>>
+    + room_id : UUIDField
+    + user_id : FK → CustomUser
+    + granted_at : DateTimeField
+    --
+    unique (room_id, user)
+  }
+}
+
+package "plugins.chat" #FCE8F8 {
+  class ChatMessage {
+    + id : BigAutoField <<PK>>
+    + room_id : UUIDField <<index>>
+    + user_id : FK → CustomUser
+    + text : TextField
+    + created_at : DateTimeField
+  }
+}
+
+package "plugins.movies" #F0E8FC {
+  class Movie {
+    + id : UUIDField <<PK>>
+    + title : CharField
+    + description : TextField
+    + video_type : CharField {FILE, YOUTUBE}
+    + video_file : FileField
+    + youtube_url : URLField
+    + poster : ImageField
+    + owner_id : FK → CustomUser
+    + created_at : DateTimeField
+  }
+
+  class RoomVideo {
+    + id : BigAutoField <<PK>>
+    + room_id : UUIDField <<unique>>
+    + movie_id : FK → Movie
+    + creator_name : CharField
+    + room_name : CharField
+    + invite_code : CharField
+    + is_public : BooleanField
+  }
+}
+
+package "plugins.reactions" #F5F5F5 {
+  class ReactionStat {
+    + id : BigAutoField <<PK>>
+    + room_id : UUIDField
+    + emoji : CharField
+    + count : PositiveIntegerField
+    --
+    unique (room_id, emoji)
+  }
+}
+
+package "plugins.activity" #F5F5F5 {
+  class ViewingHistory {
+    + id : BigAutoField <<PK>>
+    + user_id : FK → CustomUser
+    + movie_id : FK → Movie <<nullable>>
+    + room_id : UUIDField <<nullable>>
+    + watched_seconds : IntegerField
+    + watched_at : DateTimeField
+  }
+}
+
+package "plugins.social" #F5F5F5 {
+  class Friendship {
+    + id : BigAutoField <<PK>>
+    + user_id : FK → CustomUser
+    + friend_id : FK → CustomUser
+    + status : CharField {PENDING, ACCEPTED}
+    + created_at : DateTimeField
+    --
+    unique (user, friend)
+  }
+}
+
+package "plugins.achievements" #F5F5F5 {
+  class Achievement {
+    + id : BigAutoField <<PK>>
+    + name : CharField
+    + key : CharField <<unique>>
+    + description : CharField
+    + icon : CharField
+  }
+
+  class UserAchievement {
+    + id : BigAutoField <<PK>>
+    + user_id : FK → CustomUser
+    + achievement_id : FK → Achievement
+    + earned_at : DateTimeField
+    --
+    unique (user, achievement)
+  }
+}
+
+' ========== ЗВ'ЯЗКИ (FK) ==========
+CustomUser "1" -- "0..*" Room : creator >
+CustomUser "1" -- "0..*" RoomMember : member >
+Room "1" -- "0..*" RoomMember : has >
+
+CustomUser "1" -- "0..*" RoomAuthorizedController
+CustomUser "1" -- "0..*" ChatMessage
+CustomUser "1" -- "0..*" Movie : owner >
+CustomUser "1" -- "0..*" ViewingHistory
+CustomUser "1" -- "0..*" Friendship : user >
+CustomUser "1" -- "0..*" Friendship : friend >
+CustomUser "1" -- "0..*" UserAchievement
+
+Movie "1" -- "0..*" RoomVideo
+Movie "1" -- "0..*" ViewingHistory
+Achievement "1" -- "0..*" UserAchievement
+
+' ========== ЛОГІЧНІ ЗВ'ЯЗКИ (room_id UUID, без FK в ORM) ==========
+Room .. RoomPlaybackState : <<room_id>>
+Room .. RoomPlaybackRules : <<room_id>>
+Room .. RoomAuthorizedController : <<room_id>>
+Room .. ChatMessage : <<room_id>>
+Room .. RoomVideo : <<room_id>>
+Room .. ReactionStat : <<room_id>>
+Room .. ViewingHistory : <<room_id optional>>
+
+note right of RoomPlaybackState
+  Синхронізація відтворення
+  (WebSocket play/pause/seek)
+end note
+
+note bottom of Room
+  Ядро: кімнати перегляду
+  WebSocket: ws/room/{room_id}/
+end note
+
+@enduml

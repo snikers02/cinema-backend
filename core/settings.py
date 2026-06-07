@@ -120,7 +120,7 @@ SIMPLE_JWT = {
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
-# CORS (фронт на іншому origin, наприклад Angular http://localhost:4200)
+# CORS 
 _cors_origins = env.list('CORS_ALLOWED_ORIGINS', default=[])
 if _cors_origins:
     CORS_ALLOWED_ORIGINS = _cors_origins

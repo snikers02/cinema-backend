@@ -2,7 +2,7 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from plugins.sync.models import RoomPlaybackState
-from apps.rooms.models import Room
+from .models import Room
 from .signals import socket_message_signal
 from asgiref.sync import sync_to_async
 

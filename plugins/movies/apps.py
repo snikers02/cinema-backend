@@ -8,3 +8,4 @@ class MoviesConfig(AppConfig):
     def ready(self):
         print("!!! MoviesConfig ready() called, importing signals !!!")
         import plugins.movies.signals
+            
