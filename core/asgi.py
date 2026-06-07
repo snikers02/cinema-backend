@@ -6,10 +6,8 @@ from channels.auth import AuthMiddlewareStack
 from django.core.asgi import get_asgi_application
 from apps.users.middleware import JWTAuthMiddleware
 
-# Django ASGI application must be created BEFORE importing routing
 django_asgi_app = get_asgi_application()
 
-# Import routing AFTER Django setup
 from apps.rooms.routing import websocket_urlpatterns
 
 application = ProtocolTypeRouter({

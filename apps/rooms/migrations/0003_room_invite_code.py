@@ -11,22 +11,23 @@ class Migration(migrations.Migration):
         ('rooms', '0002_room_name'),
     ]
 
+    @staticmethod
     def _generate_invite_code():
         return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
     def backfill_invite_codes(apps, schema_editor):
-        Room = apps.get_model('rooms', 'Room')
+        room_model = apps.get_model('rooms', 'Room')
 
         # Fill existing rows first, before adding UNIQUE constraint.
-        for room in Room.objects.all().only('id', 'invite_code'):
+        for room in room_model.objects.all().only('id', 'invite_code'):
             if room.invite_code:
                 continue
 
             code = Migration._generate_invite_code()
-            while Room.objects.filter(invite_code=code).exists():
+            while room_model.objects.filter(invite_code=code).exists():
                 code = Migration._generate_invite_code()
 
-            Room.objects.filter(id=room.id).update(invite_code=code)
+            room_model.objects.filter(id=room.id).update(invite_code=code)
 
     operations = [
         migrations.AddField(

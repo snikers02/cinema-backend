@@ -4,7 +4,6 @@ from .models import ChatMessage
 
 @receiver(socket_message_signal)
 def handle_chat_message(sender, room_id, user, message_type, data, **kwargs):
-    # Плагін сам вирішує, чи цікаве йому це повідомлення
     if message_type == 'chat.message':
         text = data.get('text')
         if text and user.is_authenticated:

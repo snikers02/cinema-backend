@@ -37,10 +37,10 @@ class Movie(models.Model):
 
 class RoomVideo(models.Model):
     room_id = models.UUIDField(unique=True) # ID з Ядра
-    creator_name = models.CharField(max_length=255, blank=True, null=True)
+    creator_name = models.CharField(max_length=255, blank=True)
     movie = models.ForeignKey('movies.Movie', on_delete=models.CASCADE)
-    room_name = models.CharField(max_length=255, blank=True, null=True)
-    invite_code = models.CharField(max_length=10, blank=True, null=True)
+    room_name = models.CharField(max_length=255, blank=True)
+    invite_code = models.CharField(max_length=10, blank=True)
     is_public = models.BooleanField(default=True)
     
     def __str__(self):

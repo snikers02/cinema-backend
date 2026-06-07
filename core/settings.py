@@ -15,13 +15,14 @@ environ.Env.read_env(BASE_DIR / '.env')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env(
     'SECRET_KEY',
-    default='django-insecure-=w@o+^4r+!35h=1fk1s#@3t)_&be-js0_7jtz9(yspup(@i-qg',
+    default='development-secret-key-only',
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool('DEBUG', default=True)
 
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
+
 
 
 # Application definition

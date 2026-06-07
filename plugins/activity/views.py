@@ -21,7 +21,7 @@ class RecordActivityView(APIView):
 
         movie = get_object_or_404(Movie, id=movie_id)
         
-        history_record = ViewingHistory.objects.create(
+        ViewingHistory.objects.create(
             user=request.user,
             movie=movie,
             room_id=room_id,

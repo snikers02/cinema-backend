@@ -8,8 +8,10 @@ from django.http import FileResponse, Http404, HttpResponse, HttpResponseBadRequ
 from django.urls import include, path, re_path
 from django.conf import settings
 from django.utils._os import safe_join
+from django.views.decorators.http import require_GET
 
 
+@require_GET
 def ranged_media_serve(request, path):
     try:
         full_path = safe_join(settings.MEDIA_ROOT, path)
