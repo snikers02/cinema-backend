@@ -1,5 +1,5 @@
-from django.test import TestCase
+from django.test import SimpleTestCase
 
-class DummyTest(TestCase):
+class DummyTest(SimpleTestCase):
     def test_dummy(self):
         self.assertTrue(True)
