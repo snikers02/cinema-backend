@@ -10,9 +10,9 @@ WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# requirements.lock — pinned versions (pip-compile)
 COPY requirements.lock .
-# hadolint ignore=DL3042
-RUN pip install --no-cache-dir --only-binary :all: -r requirements.lock  # nosonar
+RUN pip install --no-cache-dir -r requirements.lock
 
 COPY . .
 

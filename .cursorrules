@@ -1,0 +1,58 @@
+# Cinema Backend — AI Agent Rules
+
+Цей проєкт — Django backend з **Microkernel Architecture** (ядро + плагіни).
+Усі зміни коду мають відповідати архітектурі, SOLID, Quality Gate SonarCloud і стратегії тестування.
+
+## Обов'язкові правила для ШІ-агентів
+
+### 1. Інтерфейси перед імплементацією
+- **Заборонено** додавати нову бізнес-логіку без абстракції: `typing.Protocol`, `abc.ABC` або Django-контракт (serializer / service interface).
+- Сервіси залежать від інтерфейсів репозиторіїв, а не від конкретних ORM-моделей напряму.
+- Плагіни реалізують контракти через signal-handlers (`@receiver`), а не через прямі імпорти з ядра.
+
+### 2. Test-Driven Development (TDD)
+- Кожна нова функція, bugfix або рефакторинг **супроводжується тестами**.
+- Спочатку тест (red), потім мінімальна реалізація (green), потім рефакторинг.
+- Використовуй `tests/helpers.py` (`create_test_user`, `response_list`) та `conftest.py` (SQLite in-memory).
+- Ціль: **200+ тестів**, покриття **≥ 70%** (`pytest --cov=. --cov-report=xml --cov-report=html`).
+
+### 3. Архітектурні обмеження (Microkernel)
+- **`core/` і `apps/` НЕ імпортують `plugins/`** — нуль винятків.
+- Комунікація ядро ↔ плагіни лише через **Django Signals** (`room_created_signal`, `socket_message_signal`).
+- `RoomConsumer` — транспорт WebSocket; бізнес-логіка в плагінах і сервісах, не в consumer.
+- Нові фічі — новий плагін у `plugins/<name>/` з `apps.py`, `signals.py`, `tests.py`.
+
+### 4. Патерни GoF (обов'язково застосовувати)
+- **Observer** — Django Signals як шина подій між ядром і плагінами.
+- **Strategy** — варіативна бізнес-логіка через окремі класи/функції (напр. правила контролю відтворення у `plugins/sync/`).
+- Не замінюй патерни анти-патернами (God Object, прямі залежності між плагінами).
+
+### 5. SOLID
+- **S** — один клас/модуль = одна відповідальність.
+- **O** — розширення через плагіни і сигнали, не через зміну ядра.
+- **L** — підтипи не ламають контракт батьківського інтерфейсу.
+- **I** — вузькі Protocol/ABC, не «товсті» інтерфейси.
+- **D** — залежність від абстракцій (ін'єкція через конструктор або Django settings).
+
+### 6. Заборони
+- Не хардкодити `SECRET_KEY`, токени, паролі — лише `.env` / CI secrets.
+- Не додавати зовнішні HTTP-виклики в бізнес-логіку без mock-обгортки в тестах.
+- Не комітити `venv/`, `htmlcov/`, `coverage.xml`, `.env`.
+- Не використовувати `requirements.txt` у Docker — лише **`requirements.lock`** (pip-compile).
+
+### 7. Якість коду (SonarCloud Quality Gate)
+- **Bugs & Vulnerabilities: 0**
+- **Code Smells: рівень A або B**
+- **Coverage: ≥ 70%**
+- Перед PR: `flake8`, `pytest --cov`, перевірка SonarCloud.
+
+### 8. Структура нового коду
+```
+apps/          # ядро (users, rooms)
+plugins/       # модульні плагіни (movies, sync, chat, …)
+core/          # settings, urls, asgi
+tests/         # спільні фікстури та хелпери
+docs/          # UML, ERD
+```
+
+Детальніше: `.cursor/rules/architecture.md` та `.cursor/rules/testing.md`.
