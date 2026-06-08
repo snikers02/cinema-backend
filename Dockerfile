@@ -3,26 +3,16 @@ FROM python:3.11-slim
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     gcc \
-    && rm -rf /var/lib/apt/lists/* \
-    && groupadd --system app \
-    && useradd --system --gid app --home-dir /app app
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 
 # requirements.lock — pinned versions (pip-compile)
 COPY requirements.lock .
-RUN pip install --no-cache-dir -r requirements.lock
-
-COPY apps/ ./apps/
-COPY core/ ./core/
-COPY plugins/ ./plugins/
-COPY manage.py .
-
-RUN mkdir -p /app/media && chown -R app:app /app
-
-USER app
+RUN pip install --no-cache-dir --only-binary=:all: -r requirements.lock
+COPY . .
 
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
