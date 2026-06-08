@@ -12,8 +12,7 @@ ENV PYTHONUNBUFFERED=1
 
 # requirements.lock — pinned versions (pip-compile)
 COPY requirements.lock .
-RUN pip install --no-cache-dir -r requirements.lock
-
+RUN pip install --no-cache-dir --only-binary=:all: -r requirements.lock
 COPY . .
 
 CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
